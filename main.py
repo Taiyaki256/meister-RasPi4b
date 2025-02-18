@@ -2,8 +2,6 @@ from pirc522 import RFID
 import RPi.GPIO as GPIO
 import time
 import pygame
-import json
-import requests
 from firebase_admin import credentials, firestore, initialize_app
 
 # Firebase設定
