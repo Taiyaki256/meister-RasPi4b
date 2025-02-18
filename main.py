@@ -17,9 +17,16 @@ db = firestore.client()
 
 # 画面セットアップ (pygame)
 pygame.init()
-screen = pygame.display.set_mode((480, 320))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  # フルスクリーン設定に変更
+pygame.mouse.set_visible(False)  # マウスカーソルを非表示
 pygame.display.set_caption("NFC Scanner")
-font = pygame.font.Font(None, 40)
+
+# 日本語フォントの設定（例: TakaoPGothicフォントを使用）
+try:
+    font_path = "/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf"  # 一般的なRaspberry Piの日本語フォントパス
+    font = pygame.font.Font(font_path, 50)  # 文字サイズを大きく調整
+except:
+    font = pygame.font.SysFont(["Inter", "noto sans cjk jp"], 50)  # 代替フォント指定
 
 # 音声セットアップ
 pygame.mixer.init()
@@ -82,11 +89,11 @@ def handle_nfc_scan():
     global BAND_UUID, MACHINE_NUM
     try:
       while True:
-        time.sleep(3)
         print("データ読み取り中 ...")
         full_data = []
         rdr.wait_for_tag()
         (error, tag_type) = rdr.request()
+        st = False
         if not error:
             (error, uid) = rdr.anticoll()
             if not error:
@@ -100,37 +107,32 @@ def handle_nfc_scan():
                                 break
                     rdr.stop_crypto()
                     st = parse_ndef(bytearray(full_data))
-                    if st == True:
-                      print("Tr")
+        if st == True:
+            print("BAND UUID: ", BAND_UUID)
 
-        # 音を鳴らす
-        # scan_sound.play()
+            # Firebaseからデータ取得
+            band_ref = db.collection("bands").document(BAND_UUID)
+            band_data = band_ref.get().to_dict()
 
-        print("BAND UUID: ",BAND_UUID)
+            print(band_data)
+            if band_data:
+                sex = band_data.get("sex", "その他")
+                age = band_data.get("age", 0)
 
-        # Firebaseからデータ取得
-        band_ref = db.collection("bands").document(BAND_UUID)
-        band_data = band_ref.get().to_dict()
+                display_text(f"性別: {sex} 年齢: {age}", (0, 255, 0))
+                time.sleep(2)
 
-        print(band_data)
-        if band_data:
-            sex = band_data.get("sex", "その他")
-            age = band_data.get("age", 0)
-
-            display_text(f"性別: {sex} 年齢: {age}", (0, 255, 0))
-            time.sleep(2)
-
-            # チェックポイントの更新
-            timestamp = int(time.time() * 1000)
-            code = ord('A')
-            checkpoint_path = f"checkpoints/1{chr(code+MACHINE_NUM)}/checked/{BAND_UUID}"
-            db.document(checkpoint_path).set({"timestamp": str(timestamp)})
-            
-            display_text("スタンプ登録完了！", (255, 255, 0))
-            time.sleep(2)
-        else:
-            display_text("データがありません", (255, 0, 0))
-            time.sleep(2)
+                # チェックポイントの更新
+                timestamp = int(time.time() * 1000)
+                code = ord('A')
+                checkpoint_path = f"checkpoints/1{chr(code+MACHINE_NUM)}/checked/{BAND_UUID}"
+                db.document(checkpoint_path).set({"timestamp": str(timestamp)})
+                
+                display_text("スタンプ登録完了！", (255, 255, 0))
+                time.sleep(3)
+            else:
+                display_text("データがありません", (255, 0, 0))
+                time.sleep(3)
 
     except Exception as e:
         print(f"Error: {e}")
