@@ -102,8 +102,7 @@ def read_mode():
 def handle_nfc_scan():
     global BAND_UUID, MACHINE_NUM
     try:
-      while True:
-        print("データ読み取り中 ...")
+        # print("データ読み取り中 ...")
         full_data = []
         rdr.wait_for_tag()
         (error, tag_type) = rdr.request()
@@ -123,6 +122,7 @@ def handle_nfc_scan():
                     st = parse_ndef(bytearray(full_data))
         if st == True:
             print("BAND UUID: ", BAND_UUID)
+            display_text("通信中....", (255,255,255), (34,139,34))
 
             # Firebaseからデータ取得
             band_ref = db.collection("bands").document(BAND_UUID)
@@ -133,8 +133,6 @@ def handle_nfc_scan():
                 sex = band_data.get("sex", "その他")
                 age = band_data.get("age", 0)
 
-                display_text(f"性別: {sex} 年齢: {age}", (0, 255, 0))
-                time.sleep(2)
 
                 # スタンプラリーチェック
                 checkpoint_status = []
@@ -143,6 +141,8 @@ def handle_nfc_scan():
                     check_path = f"checkpoints/1{chr(code+i)}/checked/{BAND_UUID}"
                     exists = db.document(check_path).get().exists
                     checkpoint_status.append(exists)
+
+                checkpoint_status[MACHINE_NUM]=True
 
                 # スタンプ表示
                 screen.fill((25, 25, 112))
@@ -174,7 +174,7 @@ def handle_nfc_scan():
                             pygame.draw.circle(screen, color, (x, y), circle_radius, 2)
                     
                     pygame.display.update()
-                    pygame.time.wait(100)  # アニメーション速度調整
+                    pygame.time.wait(300)  # アニメーション速度調整
                     pygame.event.pump()  # イベントループを維持
 
                 # チェックポイントの更新
@@ -188,6 +188,7 @@ def handle_nfc_scan():
             else:
                 display_text("データがありません", (255,255,255), (178,34,34))
                 time.sleep(3)
+                
 
     except Exception as e:
         print(f"Error: {e}")
@@ -199,6 +200,7 @@ if __name__ == "__main__":
     read_mode()
     while True:
         try:
+            pygame.event.get()
             handle_nfc_scan()
             read_mode()
         except KeyboardInterrupt:
