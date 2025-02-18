@@ -150,6 +150,11 @@ def handle_nfc_scan():
                 text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//4))
                 screen.blit(text_surface, text_rect)
 
+                # 上の端っこに情報表示
+                text_surface = font.render(f"性別: {sex} 年齢: {age}", True, (245,245,220))
+                text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//10))
+                screen.blit(text_surface, text_rect)
+
                 circle_radius = 30
                 spacing = screen.get_width() // (CHECKPOINT_NUM+1)
                 start_time = time.time()
@@ -166,11 +171,15 @@ def handle_nfc_scan():
                         x = (i + 1) * spacing
                         y = screen.get_height() * 3 // 4
                         if status:
-                            # 登録済みは常時緑色
-                            pygame.draw.circle(screen, (34,139,34), (x, y), circle_radius, 0)
+                            # 登録済み
+                            # チェックポイント番号の場合アニメーション
+                            if i == MACHINE_NUM:
+                                pygame.draw.circle(screen, (34,139,34) if lit else (25, 25, 112), (x, y), circle_radius, 0)
+                            else:
+                                pygame.draw.circle(screen, (34,139,34), (x, y), circle_radius, 0)
                         else:
-                            # 未登録は点滅（白と紺色を交互）
-                            color = (245,245,220) if lit else (25, 25, 112)
+                            # 未登録
+                            color = (245,245,220)
                             pygame.draw.circle(screen, color, (x, y), circle_radius, 2)
                     
                     pygame.display.update()
