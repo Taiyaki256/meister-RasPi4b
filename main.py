@@ -23,7 +23,7 @@ pygame.display.set_caption("NFC Scanner")
 
 # 日本語フォントの設定（例: TakaoPGothicフォントを使用）
 try:
-    font_path = "/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf"  # 一般的なRaspberry Piの日本語フォントパス
+    font_path = "./fonts/GenJyuuGothic-Bold.ttf"  # 一般的なRaspberry Piの日本語フォントパス
     font = pygame.font.Font(font_path, 50)  # 文字サイズを大きく調整
 except:
     font = pygame.font.SysFont(["Inter", "noto sans cjk jp"], 50)  # 代替フォント指定
@@ -141,6 +141,7 @@ def handle_nfc_scan():
 
 # メインループ
 if __name__ == "__main__":
+    read_mode()
     while True:
         try:
             handle_nfc_scan()
