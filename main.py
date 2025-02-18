@@ -73,16 +73,26 @@ def parse_ndef(data):
 rdr = RFID()
 
 # UI描画関数
-def display_text(text, color=(255, 255, 255), background=(0, 0, 0)):
+def display_text(text, color=(245,245,220), background=(25, 25, 112), 
+                outline_color=(0,0,0)):
     screen.fill(background)
+    
+    # テキストのアウトライン描画（影効果）
+    outline_surface = font.render(text, True, outline_color)
+    outline_pos = (screen.get_width()//2 - outline_surface.get_width()//2 + 3, 
+                  screen.get_height()//2 - outline_surface.get_height()//2 + 3)
+    screen.blit(outline_surface, outline_pos)
+    
+    # メインテキスト描画
     text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect(center=(240, 160))
+    text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//2))
+    
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
 # NFC読み取りモード
 def read_mode():
-    display_text("NFCを近づけてね！", (255, 255, 255), (0, 0, 0))
+    display_text("NFCを近づけてね！", (245,245,220), (25, 25, 112))
 
 # 読み取ったNFCタグのUIDをFirebaseに送信
 def handle_nfc_scan():
@@ -128,15 +138,15 @@ def handle_nfc_scan():
                 checkpoint_path = f"checkpoints/1{chr(code+MACHINE_NUM)}/checked/{BAND_UUID}"
                 db.document(checkpoint_path).set({"timestamp": str(timestamp)})
                 
-                display_text("スタンプ登録完了！", (255, 255, 0))
+                display_text("スタンプ登録完了！", (255,255,255), (34,139,34))
                 time.sleep(3)
             else:
-                display_text("データがありません", (255, 0, 0))
+                display_text("データがありません", (255,255,255), (178,34,34))
                 time.sleep(3)
 
     except Exception as e:
         print(f"Error: {e}")
-        display_text("エラー発生", (255, 0, 0))
+        display_text("エラー発生", (255,255,255), (178,34,34))
         time.sleep(2)
 
 # メインループ
