@@ -32,7 +32,11 @@ except:
 pygame.mixer.init()
 # scan_sound = pygame.mixer.Sound("scan.wav")
 
+# チェックポイント番号
 MACHINE_NUM=0
+
+# チェックポイントの数
+CHECKPOINT_NUM=5
 
 
 def parse_ndef(data):
@@ -73,16 +77,26 @@ def parse_ndef(data):
 rdr = RFID()
 
 # UI描画関数
-def display_text(text, color=(255, 255, 255), background=(0, 0, 0)):
+def display_text(text, color=(245,245,220), background=(25, 25, 112), 
+                outline_color=(0,0,0)):
     screen.fill(background)
+    
+    # テキストのアウトライン描画（影効果）
+    outline_surface = font.render(text, True, outline_color)
+    outline_pos = (screen.get_width()//2 - outline_surface.get_width()//2 + 3, 
+                  screen.get_height()//2 - outline_surface.get_height()//2 + 3)
+    screen.blit(outline_surface, outline_pos)
+    
+    # メインテキスト描画
     text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect(center=(240, 160))
+    text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//2))
+    
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
 # NFC読み取りモード
 def read_mode():
-    display_text("NFCを近づけてね！", (255, 255, 255), (0, 0, 0))
+    display_text("NFCを近づけてね！", (245,245,220), (25, 25, 112))
 
 # 読み取ったNFCタグのUIDをFirebaseに送信
 def handle_nfc_scan():
@@ -122,21 +136,62 @@ def handle_nfc_scan():
                 display_text(f"性別: {sex} 年齢: {age}", (0, 255, 0))
                 time.sleep(2)
 
+                # スタンプラリーチェック
+                checkpoint_status = []
+                for i in range(5):  # 5つのチェックポイントを確認
+                    code = ord('A')
+                    check_path = f"checkpoints/1{chr(code+i)}/checked/{BAND_UUID}"
+                    exists = db.document(check_path).get().exists
+                    checkpoint_status.append(exists)
+
+                # スタンプ表示
+                screen.fill((25, 25, 112))
+                text_surface = font.render("スタンプ状況", True, (245,245,220))
+                text_rect = text_surface.get_rect(center=(screen.get_width()//2, screen.get_height()//4))
+                screen.blit(text_surface, text_rect)
+
+                circle_radius = 30
+                spacing = screen.get_width() // (CHECKPOINT_NUM+1)
+                start_time = time.time()
+                lit = True  # 点滅状態フラグ
+                
+                # 3秒間アニメーションループ
+                while time.time() - start_time < 3:
+                    # 点滅状態を0.5秒ごとに切り替え
+                    if int((time.time() - start_time) * 2) % 2 == 0:
+                        lit = not lit
+                    
+                    # スタンプ再描画
+                    for i, status in enumerate(checkpoint_status):
+                        x = (i + 1) * spacing
+                        y = screen.get_height() * 3 // 4
+                        if status:
+                            # 登録済みは常時緑色
+                            pygame.draw.circle(screen, (34,139,34), (x, y), circle_radius, 0)
+                        else:
+                            # 未登録は点滅（白と紺色を交互）
+                            color = (245,245,220) if lit else (25, 25, 112)
+                            pygame.draw.circle(screen, color, (x, y), circle_radius, 2)
+                    
+                    pygame.display.update()
+                    pygame.time.wait(100)  # アニメーション速度調整
+                    pygame.event.pump()  # イベントループを維持
+
                 # チェックポイントの更新
                 timestamp = int(time.time() * 1000)
                 code = ord('A')
                 checkpoint_path = f"checkpoints/1{chr(code+MACHINE_NUM)}/checked/{BAND_UUID}"
                 db.document(checkpoint_path).set({"timestamp": str(timestamp)})
                 
-                display_text("スタンプ登録完了！", (255, 255, 0))
+                display_text("スタンプ登録完了！", (255,255,255), (34,139,34))
                 time.sleep(3)
             else:
-                display_text("データがありません", (255, 0, 0))
+                display_text("データがありません", (255,255,255), (178,34,34))
                 time.sleep(3)
 
     except Exception as e:
         print(f"Error: {e}")
-        display_text("エラー発生", (255, 0, 0))
+        display_text("エラー発生", (255,255,255), (178,34,34))
         time.sleep(2)
 
 # メインループ
