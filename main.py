@@ -102,7 +102,7 @@ def handle_nfc_scan():
     try:
         # print("データ読み取り中 ...")
         full_data = []
-        rdr.wait_for_tag()
+        # rdr.wait_for_tag()
         (error, tag_type) = rdr.request()
         st = False
         if not error:

@@ -1,0 +1,7 @@
+sudo groupadd spi
+
+sudo usermod -aG spi ユーザー名
+
+sudo chown :spi /dev/spidev*
+
+sudo chmod g+rw /dev/spidev*
